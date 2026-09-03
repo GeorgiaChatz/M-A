@@ -8,6 +8,8 @@ import streamlit as st
 from dropbox.files import CommitInfo, UploadSessionCursor, WriteMode
 
 DROPBOX_FOLDER = "/M&A Wedding"
+LARGE_VIDEO_URL = "https://www.dropbox.com/scl/fo/o1r1kii4z9kewhb8egg7s/AAk40FNxCyd4tlIAJQBg-dQ?rlkey=wc1kjvnpv0bz48w102swzsh7o&st=izylnhp7&dl=0"
+
 CHUNK_SIZE = 8 * 1024 * 1024
 LARGE_FILE_WARNING_MB = 700
 
@@ -68,11 +70,10 @@ def inject_css():
             margin-bottom:1.7rem;
         }
 
-        /* Important: this is a DIV, not an h1, so Streamlit cannot override it */
         .ma-names{
             font-family:"Cormorant Garamond","Baskerville","Times New Roman",serif !important;
             font-size:clamp(3.4rem,10vw,5.8rem) !important;
-            line-height:.88 !important;
+            line-height:.9 !important;
             font-weight:500 !important;
             letter-spacing:-.045em !important;
             text-align:center !important;
@@ -92,12 +93,12 @@ def inject_css():
 
         .ma-subtitle{
             font-family:"Cormorant Garamond","Baskerville","Times New Roman",serif !important;
-            font-size:clamp(1.65rem,4.8vw,2.15rem) !important;
+            font-size:clamp(1.55rem,4.6vw,2rem) !important;
             line-height:1.1 !important;
             font-style:italic !important;
             font-weight:400 !important;
             color:var(--muted) !important;
-            margin-top:1.55rem !important;
+            margin-top:1.45rem !important;
         }
 
         .ma-rule{
@@ -149,6 +150,48 @@ def inject_css():
             border-color:var(--ink);
         }
 
+        /* Large video fallback button */
+        div[data-testid="stLinkButton"] > a {
+            width:100%;
+            min-height:3.35rem;
+            border-radius:999px !important;
+            border:1px solid var(--ink) !important;
+            background:transparent !important;
+            color:var(--ink) !important;
+            font-family:"Montserrat",Arial,sans-serif !important;
+            font-size:.78rem !important;
+            font-weight:600 !important;
+            letter-spacing:.1em !important;
+            text-transform:uppercase !important;
+            display:flex !important;
+            align-items:center !important;
+            justify-content:center !important;
+            text-decoration:none !important;
+        }
+
+        div[data-testid="stLinkButton"] > a:hover {
+            background:var(--ink) !important;
+            color:#fff !important;
+        }
+
+        .ma-large-title{
+            text-align:center;
+            font-family:"Cormorant Garamond","Baskerville","Times New Roman",serif !important;
+            font-size:1.5rem !important;
+            font-style:italic;
+            color:var(--ink);
+            margin-top:1.65rem;
+            margin-bottom:.2rem;
+        }
+
+        .ma-large-copy{
+            text-align:center;
+            color:var(--muted);
+            font-size:.8rem;
+            line-height:1.55;
+            margin-bottom:.7rem;
+        }
+
         .ma-summary{
             background:rgba(255,255,255,.42);
             border:1px solid var(--line);
@@ -185,7 +228,7 @@ def inject_css():
             .block-container{padding:1rem .9rem 3rem;}
             .ma-names{
                 font-size:clamp(2.8rem,13vw,4.6rem) !important;
-                line-height:.92 !important;
+                line-height:.94 !important;
             }
             .ma-amp{
                 display:block;
@@ -193,7 +236,7 @@ def inject_css():
                 margin:.03em 0;
                 font-size:.52em !important;
             }
-            .ma-subtitle{margin-top:1.35rem !important;}
+            .ma-subtitle{margin-top:1.2rem !important;}
         }
         </style>
         """,
@@ -342,6 +385,22 @@ def main():
             st.error("We couldn't connect to the wedding album right now. Please try again.")
             with st.expander("Technical details"):
                 st.code(str(exc))
+
+    st.markdown(
+        """
+        <div class="ma-large-title">Have a very large video?</div>
+        <div class="ma-large-copy">
+            For videos over 1 GB, use the large-video upload option below.
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.link_button(
+        "Upload a large video",
+        LARGE_VIDEO_URL,
+        use_container_width=True,
+    )
 
     st.markdown(
         """
