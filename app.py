@@ -71,7 +71,7 @@ def inject_css():
         /* Important: this is a DIV, not an h1, so Streamlit cannot override it */
         .ma-names{
             font-family:"Cormorant Garamond","Baskerville","Times New Roman",serif !important;
-            font-size:clamp(4.1rem,12vw,7rem) !important;
+            font-size:clamp(3.4rem,10vw,5.8rem) !important;
             line-height:.88 !important;
             font-weight:500 !important;
             letter-spacing:-.045em !important;
@@ -184,7 +184,7 @@ def inject_css():
         @media(max-width:640px){
             .block-container{padding:1rem .9rem 3rem;}
             .ma-names{
-                font-size:clamp(3.25rem,15vw,5.4rem) !important;
+                font-size:clamp(2.8rem,13vw,4.6rem) !important;
                 line-height:.92 !important;
             }
             .ma-amp{
