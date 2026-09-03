@@ -188,8 +188,6 @@ def inject_css() -> None:
         unsafe_allow_html=True,
     )
 
-
-@st.cache_resource(show_spinner=False)
 def get_dropbox_client():
     """Use a refresh token when available; access_token is supported for quick testing."""
     secrets = st.secrets
