@@ -1,85 +1,416 @@
-import streamlit as st
+import re
+import uuid
+from datetime import datetime, timezone
+from pathlib import PurePosixPath
+
 import dropbox
+import streamlit as st
+from dropbox.files import CommitInfo, UploadSessionCursor, WriteMode
+
+DROPBOX_FOLDER = "/M&A Wedding"
+LARGE_VIDEO_URL = "https://www.dropbox.com/scl/fo/o1r1kii4z9kewhb8egg7s/AAk40FNxCyd4tlIAJQBg-dQ?rlkey=wc1kjvnpv0bz48w102swzsh7o&st=izylnhp7&dl=0"
+
+CHUNK_SIZE = 8 * 1024 * 1024
+LARGE_FILE_WARNING_MB = 700
 
 st.set_page_config(
-    page_title="Dropbox Refresh Token Helper",
-    page_icon="🔐",
+    page_title="Marios & Aggeliki — Wedding Memories",
+    page_icon="🤍",
     layout="centered",
+    initial_sidebar_state="collapsed",
 )
 
-st.title("Dropbox Refresh Token Helper")
-st.write("Use this one-time page to create a Dropbox refresh token for your wedding upload app.")
-st.warning("Do not share your App Secret, authorization code, or refresh token with anyone.")
+def inject_css():
+    st.markdown(
+        """
+        <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Montserrat:wght@400;500;600&display=swap');
 
-app_key = st.text_input("Dropbox App Key")
-app_secret = st.text_input("Dropbox App Secret", type="password")
+        :root{
+            --paper:#f7f1e8;
+            --paper2:#fcfaf6;
+            --ink:#26211d;
+            --muted:#8b7768;
+            --line:rgba(38,33,29,.16);
+        }
 
-if "auth_url" not in st.session_state:
-    st.session_state.auth_url = None
-if "oauth_flow" not in st.session_state:
-    st.session_state.oauth_flow = None
+        html, body, [class*="css"]{
+            font-family:"Montserrat", Arial, sans-serif;
+        }
 
-if st.button("Create Dropbox authorization link", use_container_width=True):
-    if not app_key or not app_secret:
-        st.error("Enter both the App Key and App Secret first.")
-    else:
-        flow = dropbox.DropboxOAuth2FlowNoRedirect(
-            app_key,
-            app_secret,
-            token_access_type="offline",
+        .stApp{
+            background:
+              radial-gradient(circle at 15% 10%, rgba(255,255,255,.95), transparent 30rem),
+              radial-gradient(circle at 85% 90%, rgba(220,205,185,.28), transparent 28rem),
+              linear-gradient(180deg,var(--paper2),var(--paper));
+            color:var(--ink);
+        }
+
+        header[data-testid="stHeader"]{background:transparent;}
+        #MainMenu, footer{visibility:hidden;}
+
+        .block-container{
+            max-width:780px;
+            padding-top:1.6rem;
+            padding-bottom:4rem;
+        }
+
+        .ma-hero{
+            text-align:center;
+            padding:1.2rem .8rem .6rem;
+        }
+
+        .ma-eyebrow{
+            font-family:"Montserrat",Arial,sans-serif !important;
+            font-size:.67rem !important;
+            font-weight:400 !important;
+            letter-spacing:.38em !important;
+            text-transform:uppercase;
+            color:var(--muted);
+            margin-bottom:1.7rem;
+        }
+
+        .ma-names{
+            font-family:"Cormorant Garamond","Baskerville","Times New Roman",serif !important;
+            font-size:clamp(3.4rem,10vw,5.8rem) !important;
+            line-height:.9 !important;
+            font-weight:500 !important;
+            letter-spacing:-.045em !important;
+            text-align:center !important;
+            color:var(--ink) !important;
+            margin:0 auto !important;
+        }
+
+        .ma-amp{
+            display:inline-block;
+            font-family:"Cormorant Garamond","Baskerville","Times New Roman",serif !important;
+            font-style:italic !important;
+            font-weight:400 !important;
+            font-size:.58em !important;
+            padding:0 .14em;
+            transform:translateY(-.03em);
+        }
+
+        .ma-subtitle{
+            font-family:"Cormorant Garamond","Baskerville","Times New Roman",serif !important;
+            font-size:clamp(1.55rem,4.6vw,2rem) !important;
+            line-height:1.1 !important;
+            font-style:italic !important;
+            font-weight:400 !important;
+            color:var(--muted) !important;
+            margin-top:1.45rem !important;
+        }
+
+        .ma-rule{
+            width:76%;
+            height:1px;
+            background:var(--line);
+            margin:1.6rem auto 2rem;
+        }
+
+        .ma-copy{
+            text-align:center;
+            color:var(--muted);
+            font-size:.94rem;
+            line-height:1.65;
+            margin-bottom:1.15rem;
+        }
+
+        [data-testid="stFileUploader"]{
+            background:rgba(255,255,255,.46);
+            border:1px solid var(--line);
+            border-radius:24px;
+            padding:.4rem;
+        }
+
+        [data-testid="stFileUploaderDropzone"]{
+            background:rgba(255,255,255,.26);
+            border:1px dashed rgba(38,33,29,.22);
+            border-radius:20px;
+            min-height:145px;
+        }
+
+        div.stButton > button{
+            width:100%;
+            min-height:3.55rem;
+            border-radius:999px;
+            border:1px solid var(--ink);
+            background:var(--ink);
+            color:#fff;
+            font-family:"Montserrat",Arial,sans-serif;
+            font-size:.82rem;
+            font-weight:600;
+            letter-spacing:.12em;
+            text-transform:uppercase;
+        }
+
+        div.stButton > button:hover{
+            background:transparent;
+            color:var(--ink);
+            border-color:var(--ink);
+        }
+
+        /* Large video fallback button */
+        div[data-testid="stLinkButton"] > a {
+            width:100%;
+            min-height:3.35rem;
+            border-radius:999px !important;
+            border:1px solid var(--ink) !important;
+            background:transparent !important;
+            color:var(--ink) !important;
+            font-family:"Montserrat",Arial,sans-serif !important;
+            font-size:.78rem !important;
+            font-weight:600 !important;
+            letter-spacing:.1em !important;
+            text-transform:uppercase !important;
+            display:flex !important;
+            align-items:center !important;
+            justify-content:center !important;
+            text-decoration:none !important;
+        }
+
+        div[data-testid="stLinkButton"] > a:hover {
+            background:var(--ink) !important;
+            color:#fff !important;
+        }
+
+        .ma-large-title{
+            text-align:center;
+            font-family:"Cormorant Garamond","Baskerville","Times New Roman",serif !important;
+            font-size:1.5rem !important;
+            font-style:italic;
+            color:var(--ink);
+            margin-top:1.65rem;
+            margin-bottom:.2rem;
+        }
+
+        .ma-large-copy{
+            text-align:center;
+            color:var(--muted);
+            font-size:.8rem;
+            line-height:1.55;
+            margin-bottom:.7rem;
+        }
+
+        .ma-summary{
+            background:rgba(255,255,255,.42);
+            border:1px solid var(--line);
+            border-radius:18px;
+            padding:.9rem 1rem;
+            margin:.8rem 0 1rem;
+        }
+
+        .ma-thanks{
+            text-align:center;
+            padding:2rem 1.3rem;
+            border:1px solid var(--line);
+            border-radius:24px;
+            background:rgba(255,255,255,.48);
+            margin-top:1rem;
+        }
+
+        .ma-thanks-title{
+            font-family:"Cormorant Garamond","Baskerville","Times New Roman",serif !important;
+            font-size:2.4rem !important;
+            font-weight:500 !important;
+            margin-bottom:.25rem;
+        }
+
+        .ma-privacy{
+            text-align:center;
+            font-size:.76rem;
+            color:var(--muted);
+            line-height:1.55;
+            margin-top:1.2rem;
+        }
+
+        @media(max-width:640px){
+            .block-container{padding:1rem .9rem 3rem;}
+            .ma-names{
+                font-size:clamp(2.8rem,13vw,4.6rem) !important;
+                line-height:.94 !important;
+            }
+            .ma-amp{
+                display:block;
+                padding:0;
+                margin:.03em 0;
+                font-size:.52em !important;
+            }
+            .ma-subtitle{margin-top:1.2rem !important;}
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+def get_dropbox_client():
+    if all(k in st.secrets for k in ("DROPBOX_APP_KEY", "DROPBOX_APP_SECRET", "DROPBOX_REFRESH_TOKEN")):
+        return dropbox.Dropbox(
+            app_key=st.secrets["DROPBOX_APP_KEY"],
+            app_secret=st.secrets["DROPBOX_APP_SECRET"],
+            oauth2_refresh_token=st.secrets["DROPBOX_REFRESH_TOKEN"],
+            timeout=900,
         )
-        authorize_url = flow.start()
-        st.session_state.oauth_flow = flow
-        st.session_state.auth_url = authorize_url
 
-if st.session_state.auth_url:
-    st.success("Step 1: Open Dropbox and approve the app.")
+    if "DROPBOX_ACCESS_TOKEN" in st.secrets:
+        return dropbox.Dropbox(
+            oauth2_access_token=st.secrets["DROPBOX_ACCESS_TOKEN"],
+            timeout=900,
+        )
+
+    raise RuntimeError("Dropbox credentials are missing.")
+
+def safe_filename(name):
+    name = PurePosixPath(name).name
+    name = re.sub(r"[\x00-\x1f\x7f]+", "", name)
+    name = re.sub(r'[<>:"/\\\\|?*]+', "_", name)
+    return name.strip(" .") or "upload"
+
+def destination_path(original_name):
+    stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d_%H-%M-%S")
+    short_id = uuid.uuid4().hex[:6]
+    return f"{DROPBOX_FOLDER.rstrip('/')}/{stamp}_{short_id}_{safe_filename(original_name)}"
+
+def upload_to_dropbox(dbx, uploaded_file, path):
+    uploaded_file.seek(0, 2)
+    size = uploaded_file.tell()
+    uploaded_file.seek(0)
+
+    if size <= CHUNK_SIZE:
+        dbx.files_upload(
+            uploaded_file.read(),
+            path,
+            mode=WriteMode.add,
+            autorename=True,
+            mute=True,
+        )
+        return
+
+    first_chunk = uploaded_file.read(CHUNK_SIZE)
+    session = dbx.files_upload_session_start(first_chunk)
+    cursor = UploadSessionCursor(session_id=session.session_id, offset=len(first_chunk))
+    commit = CommitInfo(path=path, mode=WriteMode.add, autorename=True, mute=True)
+
+    while cursor.offset < size:
+        remaining = size - cursor.offset
+        chunk = uploaded_file.read(min(CHUNK_SIZE, remaining))
+        if not chunk:
+            raise IOError("Upload ended unexpectedly.")
+
+        if cursor.offset + len(chunk) >= size:
+            dbx.files_upload_session_finish(chunk, cursor, commit)
+        else:
+            dbx.files_upload_session_append_v2(chunk, cursor)
+            cursor.offset += len(chunk)
+
+def main():
+    inject_css()
+
+    st.markdown(
+        """
+        <div class="ma-hero">
+            <div class="ma-eyebrow">M &amp; A · WEDDING</div>
+            <div class="ma-names">Marios <span class="ma-amp">&amp;</span> Aggeliki</div>
+            <div class="ma-subtitle">Share the memories with us</div>
+        </div>
+        <div class="ma-rule"></div>
+        <div class="ma-copy">
+            Upload the photos and videos you captured today.<br>
+            You can select many files at once.
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    uploads = st.file_uploader(
+        "Photos & videos",
+        type=["jpg","jpeg","png","heic","webp","mp4","mov","m4v","avi","webm"],
+        accept_multiple_files=True,
+        label_visibility="collapsed",
+    )
+
+    if uploads:
+        total_mb = sum(getattr(f, "size", 0) for f in uploads) / (1024 * 1024)
+        st.markdown(
+            f'<div class="ma-summary"><strong>{len(uploads)} file(s) selected</strong><br>Total size: {total_mb:,.1f} MB</div>',
+            unsafe_allow_html=True,
+        )
+
+        large = [f for f in uploads if getattr(f, "size", 0)/(1024*1024) >= LARGE_FILE_WARNING_MB]
+        if large:
+            st.info("Large video selected — keep this page open until the upload finishes.")
+
+    if st.button("Share memories", disabled=not uploads, use_container_width=True):
+        try:
+            dbx = get_dropbox_client()
+            progress = st.progress(0, text="Preparing your memories…")
+            errors = []
+
+            for i, f in enumerate(uploads, start=1):
+                size_mb = getattr(f, "size", 0)/(1024*1024)
+                progress.progress(
+                    (i-1)/len(uploads),
+                    text=f"Uploading {i} of {len(uploads)} · {f.name} · {size_mb:,.1f} MB"
+                )
+
+                try:
+                    upload_to_dropbox(dbx, f, destination_path(f.name))
+                except Exception as exc:
+                    errors.append((f.name, str(exc)))
+
+                progress.progress(i/len(uploads), text=f"Finished {i} of {len(uploads)}")
+
+            successful = len(uploads) - len(errors)
+
+            if errors:
+                st.warning(f"{successful} file(s) uploaded, but {len(errors)} failed.")
+                with st.expander("Show upload errors"):
+                    for filename, error in errors:
+                        st.write(f"**{filename}**")
+                        st.code(error)
+            else:
+                st.balloons()
+                st.markdown(
+                    """
+                    <div class="ma-thanks">
+                        <div class="ma-thanks-title">Thank you 🤍</div>
+                        <div>Your memories are now part of our day.</div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+                st.success("All files were uploaded successfully.")
+
+        except Exception as exc:
+            st.error("We couldn't connect to the wedding album right now. Please try again.")
+            with st.expander("Technical details"):
+                st.code(str(exc))
+
+    st.markdown(
+        """
+        <div class="ma-large-title">Have a very large video?</div>
+        <div class="ma-large-copy">
+            For videos over 1 GB, use the large-video upload option below.
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
     st.link_button(
-        "Open Dropbox authorization",
-        st.session_state.auth_url,
+        "Upload a large video",
+        LARGE_VIDEO_URL,
         use_container_width=True,
     )
 
-    st.write(
-        "After you click **Allow**, Dropbox will show you an authorization code. "
-        "Copy that code and paste it below."
+    st.markdown(
+        """
+        <div class="ma-privacy">
+            Your files are uploaded to our private wedding folder.<br>
+            Other guests cannot see what you share.
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
 
-    auth_code = st.text_input("Authorization code")
-
-    if st.button("Generate refresh token", use_container_width=True):
-        if not auth_code:
-            st.error("Paste the authorization code first.")
-        elif st.session_state.oauth_flow is None:
-            st.error("Create the authorization link again first.")
-        else:
-            try:
-                result = st.session_state.oauth_flow.finish(auth_code.strip())
-                refresh_token = getattr(result, "refresh_token", None)
-
-                if not refresh_token:
-                    st.error(
-                        "Dropbox did not return a refresh token. "
-                        "Create a new authorization link and try again."
-                    )
-                else:
-                    st.success("Done. Your refresh token is below.")
-                    st.code(refresh_token, language=None)
-
-                    st.markdown("### Put this in Streamlit Secrets")
-                    secrets_text = (
-                        'DROPBOX_APP_KEY = "' + app_key + '"\n'
-                        'DROPBOX_APP_SECRET = "' + app_secret + '"\n'
-                        'DROPBOX_REFRESH_TOKEN = "' + refresh_token + '"'
-                    )
-                    st.code(secrets_text, language="toml")
-
-                    st.info(
-                        "Save these three values in your wedding app's Streamlit Secrets, "
-                        "remove the old DROPBOX_ACCESS_TOKEN line, and reboot the app."
-                    )
-
-            except Exception as exc:
-                st.error("Dropbox could not complete the authorization.")
-                with st.expander("Technical details"):
-                    st.code(str(exc))
+if __name__ == "__main__":
+    main()
