@@ -10,6 +10,7 @@ from dropbox.files import CommitInfo, UploadSessionCursor, WriteMode
 DROPBOX_FOLDER = "/M&A Wedding"
 LARGE_VIDEO_URL = "https://www.dropbox.com/scl/fo/o1r1kii4z9kewhb8egg7s/AAk40FNxCyd4tlIAJQBg-dQ?rlkey=wc1kjvnpv0bz48w102swzsh7o&st=izylnhp7&dl=0"
 
+SIMPLE_UPLOAD_LIMIT = 150 * 1024 * 1024
 CHUNK_SIZE = 8 * 1024 * 1024
 LARGE_FILE_WARNING_MB = 700
 
@@ -22,7 +23,7 @@ st.set_page_config(
 
 def inject_css():
     st.markdown(
-        """
+        '''
         <style>
         @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Montserrat:wght@400;500;600&display=swap');
 
@@ -150,7 +151,6 @@ def inject_css():
             border-color:var(--ink);
         }
 
-        /* Large video fallback button */
         div[data-testid="stLinkButton"] > a {
             width:100%;
             min-height:3.35rem;
@@ -239,7 +239,7 @@ def inject_css():
             .ma-subtitle{margin-top:1.2rem !important;}
         }
         </style>
-        """,
+        ''',
         unsafe_allow_html=True,
     )
 
@@ -263,7 +263,7 @@ def get_dropbox_client():
 def safe_filename(name):
     name = PurePosixPath(name).name
     name = re.sub(r"[\x00-\x1f\x7f]+", "", name)
-    name = re.sub(r'[<>:"/\\\\|?*]+', "_", name)
+    name = re.sub(r'[<>:"/\\|?*]+', "_", name)
     return name.strip(" .") or "upload"
 
 def destination_path(original_name):
@@ -276,7 +276,7 @@ def upload_to_dropbox(dbx, uploaded_file, path):
     size = uploaded_file.tell()
     uploaded_file.seek(0)
 
-    if size <= CHUNK_SIZE:
+    if size <= SIMPLE_UPLOAD_LIMIT:
         dbx.files_upload(
             uploaded_file.read(),
             path,
@@ -287,27 +287,49 @@ def upload_to_dropbox(dbx, uploaded_file, path):
         return
 
     first_chunk = uploaded_file.read(CHUNK_SIZE)
-    session = dbx.files_upload_session_start(first_chunk)
-    cursor = UploadSessionCursor(session_id=session.session_id, offset=len(first_chunk))
-    commit = CommitInfo(path=path, mode=WriteMode.add, autorename=True, mute=True)
+    start_result = dbx.files_upload_session_start(first_chunk)
+
+    cursor = UploadSessionCursor(
+        session_id=start_result.session_id,
+        offset=len(first_chunk),
+    )
+
+    commit = CommitInfo(
+        path=path,
+        mode=WriteMode.add,
+        autorename=True,
+        mute=True,
+    )
 
     while cursor.offset < size:
         remaining = size - cursor.offset
         chunk = uploaded_file.read(min(CHUNK_SIZE, remaining))
-        if not chunk:
-            raise IOError("Upload ended unexpectedly.")
 
-        if cursor.offset + len(chunk) >= size:
-            dbx.files_upload_session_finish(chunk, cursor, commit)
+        if not chunk:
+            raise IOError("Upload ended unexpectedly before Dropbox received the full file.")
+
+        next_offset = cursor.offset + len(chunk)
+        is_last_chunk = next_offset == size
+
+        if is_last_chunk:
+            dbx.files_upload_session_finish(
+                chunk,
+                cursor,
+                commit,
+            )
+            cursor.offset = next_offset
         else:
-            dbx.files_upload_session_append_v2(chunk, cursor)
-            cursor.offset += len(chunk)
+            dbx.files_upload_session_append_v2(
+                chunk,
+                cursor,
+            )
+            cursor.offset = next_offset
 
 def main():
     inject_css()
 
     st.markdown(
-        """
+        '''
         <div class="ma-hero">
             <div class="ma-eyebrow">M &amp; A · WEDDING</div>
             <div class="ma-names">Marios <span class="ma-amp">&amp;</span> Aggeliki</div>
@@ -318,7 +340,7 @@ def main():
             Upload the photos and videos you captured today.<br>
             You can select many files at once.
         </div>
-        """,
+        ''',
         unsafe_allow_html=True,
     )
 
@@ -348,6 +370,7 @@ def main():
 
             for i, f in enumerate(uploads, start=1):
                 size_mb = getattr(f, "size", 0)/(1024*1024)
+
                 progress.progress(
                     (i-1)/len(uploads),
                     text=f"Uploading {i} of {len(uploads)} · {f.name} · {size_mb:,.1f} MB"
@@ -371,12 +394,12 @@ def main():
             else:
                 st.balloons()
                 st.markdown(
-                    """
+                    '''
                     <div class="ma-thanks">
                         <div class="ma-thanks-title">Thank you 🤍</div>
                         <div>Your memories are now part of our day.</div>
                     </div>
-                    """,
+                    ''',
                     unsafe_allow_html=True,
                 )
                 st.success("All files were uploaded successfully.")
@@ -387,12 +410,12 @@ def main():
                 st.code(str(exc))
 
     st.markdown(
-        """
+        '''
         <div class="ma-large-title">Have a very large video?</div>
         <div class="ma-large-copy">
             For videos over 1 GB, use the large-video upload option below.
         </div>
-        """,
+        ''',
         unsafe_allow_html=True,
     )
 
@@ -403,12 +426,12 @@ def main():
     )
 
     st.markdown(
-        """
+        '''
         <div class="ma-privacy">
             Your files are uploaded to our private wedding folder.<br>
             Other guests cannot see what you share.
         </div>
-        """,
+        ''',
         unsafe_allow_html=True,
     )
 
