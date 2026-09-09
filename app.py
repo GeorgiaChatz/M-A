@@ -25,7 +25,7 @@ def inject_css():
     st.markdown(
         '''
         <style>
-        @import url('https://fonts.googleapis.com/css2?family=GFS+Didot&family=Noto+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Noto+Serif:ital,wght@0,400;0,500;1,400&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=GFS+Neohellenic:ital,wght@0,400;0,700;1,400&family=Noto+Sans:wght@400;500;600&display=swap');
 
         :root{
             --paper:#f7f1e8;
@@ -72,34 +72,35 @@ def inject_css():
         }
 
         .ma-names{
-            font-family:"GFS Didot","Noto Serif","Times New Roman",serif !important;
-            font-size:clamp(3.4rem,10vw,5.8rem) !important;
-            line-height:.9 !important;
+            font-family:"GFS Neohellenic","Trebuchet MS",sans-serif !important;
+            font-size:clamp(2.35rem,6vw,3.65rem) !important;
+            line-height:1.02 !important;
             font-weight:500 !important;
-            letter-spacing:-.045em !important;
+            letter-spacing:-.025em !important;
             text-align:center !important;
             color:var(--ink) !important;
             margin:0 auto !important;
+            white-space:nowrap;
         }
 
         .ma-amp{
             display:inline-block;
-            font-family:"GFS Didot","Noto Serif","Times New Roman",serif !important;
-            font-style:italic !important;
+            font-family:"GFS Neohellenic","Trebuchet MS",sans-serif !important;
+            font-style:normal !important;
             font-weight:400 !important;
-            font-size:.58em !important;
+            font-size:.68em !important;
             padding:0 .14em;
             transform:translateY(-.03em);
         }
 
         .ma-subtitle{
-            font-family:"GFS Didot","Noto Serif","Times New Roman",serif !important;
-            font-size:clamp(1.55rem,4.6vw,2rem) !important;
+            font-family:"GFS Neohellenic","Trebuchet MS",sans-serif !important;
+            font-size:clamp(1.05rem,2.7vw,1.35rem) !important;
             line-height:1.1 !important;
             font-style:italic !important;
             font-weight:400 !important;
             color:var(--muted) !important;
-            margin-top:1.45rem !important;
+            margin-top:.9rem !important;
         }
 
         .ma-rule{
@@ -176,7 +177,7 @@ def inject_css():
 
         .ma-large-title{
             text-align:center;
-            font-family:"GFS Didot","Noto Serif","Times New Roman",serif !important;
+            font-family:"GFS Neohellenic","Trebuchet MS",sans-serif !important;
             font-size:1.5rem !important;
             font-style:italic;
             color:var(--ink);
@@ -210,7 +211,7 @@ def inject_css():
         }
 
         .ma-thanks-title{
-            font-family:"GFS Didot","Noto Serif","Times New Roman",serif !important;
+            font-family:"GFS Neohellenic","Trebuchet MS",sans-serif !important;
             font-size:2.4rem !important;
             font-weight:500 !important;
             margin-bottom:.25rem;
@@ -227,16 +228,22 @@ def inject_css():
         @media(max-width:640px){
             .block-container{padding:1rem .9rem 3rem;}
             .ma-names{
-                font-size:clamp(2.8rem,13vw,4.6rem) !important;
-                line-height:.94 !important;
+                font-size:clamp(1.95rem,9.2vw,2.65rem) !important;
+                line-height:1.05 !important;
+                white-space:nowrap;
             }
             .ma-amp{
-                display:block;
-                padding:0;
-                margin:.03em 0;
-                font-size:.52em !important;
+                display:inline-block;
+                padding:0 .10em;
+                margin:0;
+                font-size:.68em !important;
             }
-            .ma-subtitle{margin-top:1.2rem !important;}
+            .ma-subtitle{
+                font-size:1.02rem !important;
+                line-height:1.25 !important;
+                margin-top:.8rem !important;
+                padding:0 .8rem;
+            }
         }
         </style>
         ''',
