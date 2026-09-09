@@ -15,7 +15,7 @@ CHUNK_SIZE = 8 * 1024 * 1024
 LARGE_FILE_WARNING_MB = 700
 
 st.set_page_config(
-    page_title="Marios & Aggeliki — Wedding Memories",
+    page_title="Μάριος & Αγγελική — Wedding Memories",
     page_icon="🤍",
     layout="centered",
     initial_sidebar_state="collapsed",
@@ -25,7 +25,7 @@ def inject_css():
     st.markdown(
         '''
         <style>
-        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Montserrat:wght@400;500;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=GFS+Didot&family=Noto+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Noto+Serif:ital,wght@0,400;0,500;1,400&display=swap');
 
         :root{
             --paper:#f7f1e8;
@@ -36,7 +36,7 @@ def inject_css():
         }
 
         html, body, [class*="css"]{
-            font-family:"Montserrat", Arial, sans-serif;
+            font-family:"Noto Sans", Arial, sans-serif;
         }
 
         .stApp{
@@ -62,7 +62,7 @@ def inject_css():
         }
 
         .ma-eyebrow{
-            font-family:"Montserrat",Arial,sans-serif !important;
+            font-family:"Noto Sans",Arial,sans-serif !important;
             font-size:.67rem !important;
             font-weight:400 !important;
             letter-spacing:.38em !important;
@@ -72,7 +72,7 @@ def inject_css():
         }
 
         .ma-names{
-            font-family:"Cormorant Garamond","Baskerville","Times New Roman",serif !important;
+            font-family:"GFS Didot","Noto Serif","Times New Roman",serif !important;
             font-size:clamp(3.4rem,10vw,5.8rem) !important;
             line-height:.9 !important;
             font-weight:500 !important;
@@ -84,7 +84,7 @@ def inject_css():
 
         .ma-amp{
             display:inline-block;
-            font-family:"Cormorant Garamond","Baskerville","Times New Roman",serif !important;
+            font-family:"GFS Didot","Noto Serif","Times New Roman",serif !important;
             font-style:italic !important;
             font-weight:400 !important;
             font-size:.58em !important;
@@ -93,7 +93,7 @@ def inject_css():
         }
 
         .ma-subtitle{
-            font-family:"Cormorant Garamond","Baskerville","Times New Roman",serif !important;
+            font-family:"GFS Didot","Noto Serif","Times New Roman",serif !important;
             font-size:clamp(1.55rem,4.6vw,2rem) !important;
             line-height:1.1 !important;
             font-style:italic !important;
@@ -138,7 +138,7 @@ def inject_css():
             border:1px solid var(--ink);
             background:var(--ink);
             color:#fff;
-            font-family:"Montserrat",Arial,sans-serif;
+            font-family:"Noto Sans",Arial,sans-serif;
             font-size:.82rem;
             font-weight:600;
             letter-spacing:.12em;
@@ -158,7 +158,7 @@ def inject_css():
             border:1px solid var(--ink) !important;
             background:transparent !important;
             color:var(--ink) !important;
-            font-family:"Montserrat",Arial,sans-serif !important;
+            font-family:"Noto Sans",Arial,sans-serif !important;
             font-size:.78rem !important;
             font-weight:600 !important;
             letter-spacing:.1em !important;
@@ -176,7 +176,7 @@ def inject_css():
 
         .ma-large-title{
             text-align:center;
-            font-family:"Cormorant Garamond","Baskerville","Times New Roman",serif !important;
+            font-family:"GFS Didot","Noto Serif","Times New Roman",serif !important;
             font-size:1.5rem !important;
             font-style:italic;
             color:var(--ink);
@@ -210,7 +210,7 @@ def inject_css():
         }
 
         .ma-thanks-title{
-            font-family:"Cormorant Garamond","Baskerville","Times New Roman",serif !important;
+            font-family:"GFS Didot","Noto Serif","Times New Roman",serif !important;
             font-size:2.4rem !important;
             font-weight:500 !important;
             margin-bottom:.25rem;
@@ -332,20 +332,19 @@ def main():
         '''
         <div class="ma-hero">
             <div class="ma-eyebrow">M &amp; A · WEDDING</div>
-            <div class="ma-names">Marios <span class="ma-amp">&amp;</span> Aggeliki</div>
-            <div class="ma-subtitle">Share the memories with us</div>
+            <div class="ma-names">Μάριος <span class="ma-amp">&amp;</span> Αγγελική</div>
+            <div class="ma-subtitle">Οι πιο όμορφες στιγμές, μέσα από τα μάτια σας</div>
         </div>
         <div class="ma-rule"></div>
         <div class="ma-copy">
-            Upload the photos and videos you captured today.<br>
-            You can select many files at once.
+            Ανέβασε τις φωτογραφίες και τα βίντεο που τράβηξες σήμερα.
         </div>
         ''',
         unsafe_allow_html=True,
     )
 
     uploads = st.file_uploader(
-        "Photos & videos",
+        "Φωτογραφίες & βίντεο",
         type=["jpg","jpeg","png","heic","webp","mp4","mov","m4v","avi","webm"],
         accept_multiple_files=True,
         label_visibility="collapsed",
@@ -360,12 +359,12 @@ def main():
 
         large = [f for f in uploads if getattr(f, "size", 0)/(1024*1024) >= LARGE_FILE_WARNING_MB]
         if large:
-            st.info("Large video selected — keep this page open until the upload finishes.")
+            st.info("Έχεις επιλέξει μεγάλο βίντεο — κράτησε τη σελίδα ανοιχτή μέχρι να ολοκληρωθεί το ανέβασμα.")
 
-    if st.button("Share memories", disabled=not uploads, use_container_width=True):
+    if st.button("ΜΟΙΡΑΣΟΥ ΤΙΣ ΣΤΙΓΜΕΣ", disabled=not uploads, use_container_width=True):
         try:
             dbx = get_dropbox_client()
-            progress = st.progress(0, text="Preparing your memories…")
+            progress = st.progress(0, text="Προετοιμασία αρχείων…")
             errors = []
 
             for i, f in enumerate(uploads, start=1):
@@ -396,31 +395,31 @@ def main():
                 st.markdown(
                     '''
                     <div class="ma-thanks">
-                        <div class="ma-thanks-title">Thank you 🤍</div>
-                        <div>Your memories are now part of our day.</div>
+                        <div class="ma-thanks-title">Ευχαριστούμε 🤍</div>
+                        <div>Οι στιγμές σας έγιναν κομμάτι της δικής μας ημέρας.</div>
                     </div>
                     ''',
                     unsafe_allow_html=True,
                 )
-                st.success("All files were uploaded successfully.")
+                st.success("Όλα τα αρχεία ανέβηκαν με επιτυχία.")
 
         except Exception as exc:
-            st.error("We couldn't connect to the wedding album right now. Please try again.")
-            with st.expander("Technical details"):
+            st.error("Δεν μπορέσαμε να συνδεθούμε με το άλμπουμ αυτή τη στιγμή. Δοκίμασε ξανά.")
+            with st.expander("Τεχνικές λεπτομέρειες"):
                 st.code(str(exc))
 
     st.markdown(
         '''
-        <div class="ma-large-title">Have a very large video?</div>
+        <div class="ma-large-title">Έχεις πολύ μεγάλο βίντεο;</div>
         <div class="ma-large-copy">
-            For videos over 1 GB, use the large-video upload option below.
+            Για βίντεο πάνω από 1 GB, χρησιμοποίησε την επιλογή παρακάτω.
         </div>
         ''',
         unsafe_allow_html=True,
     )
 
     st.link_button(
-        "Upload a large video",
+        "ΑΝΕΒΑΣΕ ΤΟ ΒΙΝΤΕΟ",
         LARGE_VIDEO_URL,
         use_container_width=True,
     )
@@ -428,8 +427,7 @@ def main():
     st.markdown(
         '''
         <div class="ma-privacy">
-            Your files are uploaded to our private wedding folder.<br>
-            Other guests cannot see what you share.
+            Οι αναμνήσεις σας, το καλύτερο δώρο μας. ♡
         </div>
         ''',
         unsafe_allow_html=True,
