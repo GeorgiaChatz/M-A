@@ -7,13 +7,11 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-# Dropbox File Request
 UPLOAD_URL = "https://www.dropbox.com/request/pl6labude2rxsoafh5e0"
 
 
-def inject_css():
-    st.markdown(
-        """
+st.markdown(
+    """
 <style>
 @import url('https://fonts.googleapis.com/css2?family=GFS+Neohellenic:ital,wght@0,400;0,700;1,400&family=Noto+Sans:wght@400;500;600&display=swap');
 
@@ -25,27 +23,13 @@ def inject_css():
     --line: rgba(38,33,29,.16);
 }
 
-html, body, [class*="css"] {
-    font-family: "Noto Sans", Arial, sans-serif;
-}
-
 .stApp {
     background:
-        radial-gradient(
-            circle at 15% 10%,
-            rgba(255,255,255,.95),
-            transparent 30rem
-        ),
-        radial-gradient(
-            circle at 85% 90%,
-            rgba(220,205,185,.28),
-            transparent 28rem
-        ),
-        linear-gradient(
-            180deg,
-            var(--paper2),
-            var(--paper)
-        );
+        radial-gradient(circle at 15% 10%,
+        rgba(255,255,255,.95), transparent 30rem),
+        radial-gradient(circle at 85% 90%,
+        rgba(220,205,185,.28), transparent 28rem),
+        linear-gradient(180deg, var(--paper2), var(--paper));
 
     color: var(--ink);
 }
@@ -54,263 +38,133 @@ header[data-testid="stHeader"] {
     background: transparent;
 }
 
-#MainMenu,
-footer {
+#MainMenu, footer {
     visibility: hidden;
 }
 
 .block-container {
     max-width: 780px;
-    padding-top: 1.6rem;
+    padding-top: 2rem;
     padding-bottom: 4rem;
 }
 
-
-/* HERO */
-
-.ma-hero {
-    text-align: center;
-    padding: 1.2rem .8rem .6rem;
+html, body, [class*="css"] {
+    font-family: "Noto Sans", Arial, sans-serif;
 }
 
+
+/* MARKDOWN TEXT */
+
 .ma-eyebrow {
-    font-family: "Noto Sans", Arial, sans-serif !important;
-
-    font-size: .67rem !important;
-    font-weight: 400 !important;
-
-    letter-spacing: .38em !important;
-    text-transform: uppercase;
-
+    text-align: center;
+    font-size: .67rem;
+    letter-spacing: .38em;
     color: var(--muted);
-
-    margin-bottom: 1.7rem;
+    margin-bottom: 1.4rem;
 }
 
 .ma-names {
-    font-family:
-        "GFS Neohellenic",
-        "Trebuchet MS",
-        sans-serif !important;
-
-    font-size:
-        clamp(2.35rem, 6vw, 3.65rem) !important;
-
-    line-height: 1.02 !important;
-
-    font-weight: 500 !important;
-
-    letter-spacing: -.025em !important;
-
-    text-align: center !important;
-
-    color: var(--ink) !important;
-
-    margin: 0 auto !important;
-
+    text-align: center;
+    font-family: "GFS Neohellenic", sans-serif;
+    font-size: clamp(2.35rem, 6vw, 3.65rem);
+    font-weight: 500;
+    line-height: 1.05;
+    letter-spacing: -.025em;
+    color: var(--ink);
     white-space: nowrap;
 }
 
 .ma-amp {
-    display: inline-block;
-
-    font-family:
-        "GFS Neohellenic",
-        "Trebuchet MS",
-        sans-serif !important;
-
-    font-style: normal !important;
-    font-weight: 400 !important;
-
-    font-size: .68em !important;
-
-    padding: 0 .14em;
-
-    transform: translateY(-.03em);
+    font-size: .68em;
+    font-weight: 400;
+    padding: 0 .12em;
 }
 
 .ma-subtitle {
-    font-family:
-        "GFS Neohellenic",
-        "Trebuchet MS",
-        sans-serif !important;
-
-    font-size:
-        clamp(1.05rem, 2.7vw, 1.35rem) !important;
-
-    line-height: 1.1 !important;
-
-    font-style: italic !important;
-    font-weight: 400 !important;
-
-    color: var(--muted) !important;
-
-    margin-top: .9rem !important;
+    text-align: center;
+    font-family: "GFS Neohellenic", sans-serif;
+    font-size: 1.15rem;
+    font-style: italic;
+    color: var(--muted);
+    margin-top: .7rem;
 }
-
-
-/* DIVIDER */
 
 .ma-rule {
     width: 76%;
     height: 1px;
-
     background: var(--line);
-
-    margin: 1.6rem auto 2rem;
+    margin: 1.8rem auto 2rem;
 }
-
-
-/* COPY */
 
 .ma-copy {
     text-align: center;
-
     color: var(--muted);
-
     font-size: .94rem;
-    line-height: 1.65;
-
-    margin-bottom: 1.25rem;
+    line-height: 1.6;
+    margin-bottom: 1.2rem;
 }
 
-
-/* STREAMLIT LINK BUTTON */
-
-div[data-testid="stLinkButton"] > a {
-    width: 100%;
-
-    min-height: 3.55rem;
-
-    border-radius: 999px !important;
-
-    border:
-        1px solid var(--ink) !important;
-
-    background:
-        var(--ink) !important;
-
-    color:
-        #ffffff !important;
-
-    font-family:
-        "Noto Sans",
-        Arial,
-        sans-serif !important;
-
-    font-size:
-        .78rem !important;
-
-    font-weight:
-        600 !important;
-
-    letter-spacing:
-        .10em !important;
-
-    text-transform:
-        uppercase !important;
-
-    display:
-        flex !important;
-
-    align-items:
-        center !important;
-
-    justify-content:
-        center !important;
-
-    text-decoration:
-        none !important;
-
-    transition:
-        all .2s ease;
-}
-
-div[data-testid="stLinkButton"] > a:hover {
-    background:
-        transparent !important;
-
-    color:
-        var(--ink) !important;
-
-    border-color:
-        var(--ink) !important;
-}
-
-
-/* NOTE */
-
-.ma-upload-note {
+.ma-note {
     text-align: center;
-
     color: var(--muted);
-
     font-size: .76rem;
-    line-height: 1.55;
-
-    margin-top: .9rem;
+    margin-top: .8rem;
 }
-
-
-/* LARGE VIDEO */
 
 .ma-large-title {
     text-align: center;
-
-    font-family:
-        "GFS Neohellenic",
-        "Trebuchet MS",
-        sans-serif !important;
-
-    font-size:
-        1.5rem !important;
-
-    font-style:
-        italic;
-
-    color:
-        var(--ink);
-
-    margin-top:
-        2.7rem;
-
-    margin-bottom:
-        .2rem;
+    font-family: "GFS Neohellenic", sans-serif;
+    font-size: 1.5rem;
+    font-style: italic;
+    color: var(--ink);
+    margin-top: 2.8rem;
 }
 
 .ma-large-copy {
     text-align: center;
+    color: var(--muted);
+    font-size: .8rem;
+    margin-top: .25rem;
+    margin-bottom: .8rem;
+}
 
-    color:
-        var(--muted);
-
-    font-size:
-        .8rem;
-
-    line-height:
-        1.55;
-
-    margin-bottom:
-        .9rem;
+.ma-footer {
+    text-align: center;
+    color: var(--muted);
+    font-size: .76rem;
+    margin-top: 2.8rem;
 }
 
 
-/* FOOTER */
+/* NATIVE STREAMLIT LINK BUTTONS */
 
-.ma-privacy {
-    text-align: center;
+div[data-testid="stLinkButton"] > a {
+    width: 100%;
+    min-height: 3.55rem;
 
-    font-size:
-        .76rem;
+    border-radius: 999px !important;
+    border: 1px solid var(--ink) !important;
 
-    color:
-        var(--muted);
+    background: var(--ink) !important;
+    color: white !important;
 
-    line-height:
-        1.55;
+    font-family: "Noto Sans", Arial, sans-serif !important;
+    font-size: .78rem !important;
+    font-weight: 600 !important;
 
-    margin-top:
-        2.8rem;
+    letter-spacing: .10em !important;
+    text-transform: uppercase !important;
+
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    text-decoration: none !important;
+}
+
+div[data-testid="stLinkButton"] > a:hover {
+    background: transparent !important;
+    color: var(--ink) !important;
 }
 
 
@@ -319,134 +173,90 @@ div[data-testid="stLinkButton"] > a:hover {
 @media(max-width: 640px) {
 
     .block-container {
-        padding:
-            1rem .9rem 3rem;
+        padding: 1.2rem .9rem 3rem;
     }
 
     .ma-names {
-        font-size:
-            clamp(
-                1.95rem,
-                9.2vw,
-                2.65rem
-            ) !important;
-
-        line-height:
-            1.05 !important;
-
-        white-space:
-            nowrap;
-    }
-
-    .ma-amp {
-        display:
-            inline-block;
-
-        padding:
-            0 .10em;
-
-        margin:
-            0;
-
-        font-size:
-            .68em !important;
+        font-size: clamp(1.95rem, 9vw, 2.65rem);
+        white-space: nowrap;
     }
 
     .ma-subtitle {
-        font-size:
-            1.02rem !important;
-
-        line-height:
-            1.25 !important;
-
-        margin-top:
-            .8rem !important;
-
-        padding:
-            0 .8rem;
+        font-size: 1.02rem;
+        padding: 0 .6rem;
     }
 }
 
 </style>
 """,
-        unsafe_allow_html=True,
-    )
+    unsafe_allow_html=True,
+)
 
 
-def main():
+# ---------- HEADER ----------
 
-    inject_css()
+st.markdown(
+    '<p class="ma-eyebrow">M &amp; A · WEDDING</p>',
+    unsafe_allow_html=True,
+)
 
-    # HERO
-    st.markdown(
-        """
-<div class="ma-hero">
-    <div class="ma-eyebrow">
-        M &amp; A · WEDDING
-    </div>
+st.markdown(
+    '<p class="ma-names">Μάριος <span class="ma-amp">&amp;</span> Αγγελική</p>',
+    unsafe_allow_html=True,
+)
 
-    <div class="ma-names">
-        Μάριος
-        <span class="ma-amp">&amp;</span>
-        Αγγελική
-    </div>
+st.markdown(
+    '<p class="ma-subtitle">Οι πιο όμορφες στιγμές, μέσα από τα μάτια σας</p>',
+    unsafe_allow_html=True,
+)
 
-    <div class="ma-subtitle">
-        Οι πιο όμορφες στιγμές, μέσα από τα μάτια σας
-    </div>
-</div>
-
-<div class="ma-rule"></div>
-
-<div class="ma-copy">
-    Ανέβασε τις φωτογραφίες και τα βίντεο
-    που τράβηξες σήμερα.
-</div>
-""",
-        unsafe_allow_html=True,
-    )
-
-    # DIRECT DROPBOX FILE REQUEST
-    st.link_button(
-        "ΑΝΕΒΑΣΕ ΦΩΤΟΓΡΑΦΙΕΣ & ΒΙΝΤΕΟ",
-        UPLOAD_URL,
-        use_container_width=True,
-    )
-
-    st.markdown(
-        """
-<div class="ma-upload-note">
-    Μπορείς να επιλέξεις πολλές φωτογραφίες
-    και βίντεο μαζί.
-</div>
-
-<div class="ma-large-title">
-    Έχεις πολύ μεγάλο βίντεο;
-</div>
-
-<div class="ma-large-copy">
-    Ανέβασέ το απευθείας στο Dropbox.
-</div>
-""",
-        unsafe_allow_html=True,
-    )
-
-    # SAME DIRECT DROPBOX FILE REQUEST
-    st.link_button(
-        "ΑΝΕΒΑΣΕ ΤΟ ΒΙΝΤΕΟ",
-        UPLOAD_URL,
-        use_container_width=True,
-    )
-
-    st.markdown(
-        """
-<div class="ma-privacy">
-    Οι αναμνήσεις σας, το καλύτερο δώρο μας. ♡
-</div>
-""",
-        unsafe_allow_html=True,
-    )
+st.markdown(
+    '<div class="ma-rule"></div>',
+    unsafe_allow_html=True,
+)
 
 
-if __name__ == "__main__":
-    main()
+# ---------- MAIN UPLOAD ----------
+
+st.markdown(
+    '<p class="ma-copy">Ανέβασε τις φωτογραφίες και τα βίντεο που τράβηξες σήμερα.</p>',
+    unsafe_allow_html=True,
+)
+
+st.link_button(
+    "ΑΝΕΒΑΣΕ ΦΩΤΟΓΡΑΦΙΕΣ & ΒΙΝΤΕΟ",
+    UPLOAD_URL,
+    use_container_width=True,
+)
+
+st.markdown(
+    '<p class="ma-note">Μπορείς να επιλέξεις πολλές φωτογραφίες και βίντεο μαζί.</p>',
+    unsafe_allow_html=True,
+)
+
+
+# ---------- LARGE VIDEO ----------
+
+st.markdown(
+    '<p class="ma-large-title">Έχεις πολύ μεγάλο βίντεο;</p>',
+    unsafe_allow_html=True,
+)
+
+st.markdown(
+    '<p class="ma-large-copy">Ανέβασέ το απευθείας στο Dropbox.</p>',
+    unsafe_allow_html=True,
+)
+
+st.link_button(
+    "ΑΝΕΒΑΣΕ ΤΟ ΒΙΝΤΕΟ",
+    UPLOAD_URL,
+    use_container_width=True,
+)
+
+
+# ---------- FOOTER ----------
+
+st.markdown(
+    '<p class="ma-footer">Οι αναμνήσεις σας, το καλύτερο δώρο μας. ♡</p>',
+    unsafe_allow_html=True,
+)
