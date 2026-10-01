@@ -1,4 +1,18 @@
+import re
+import uuid
+from datetime import datetime, timezone
+from pathlib import PurePosixPath
+
+import dropbox
 import streamlit as st
+from dropbox.files import CommitInfo, UploadSessionCursor, WriteMode
+
+DROPBOX_FOLDER = "/M&A Wedding"
+LARGE_VIDEO_URL = "https://www.dropbox.com/request/pl6labude2rxsoafh5e0"
+
+SIMPLE_UPLOAD_LIMIT = 150 * 1024 * 1024
+CHUNK_SIZE = 8 * 1024 * 1024
+LARGE_FILE_WARNING_MB = 700
 
 st.set_page_config(
     page_title="Μάριος & Αγγελική — Wedding Memories",
@@ -7,256 +21,364 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-UPLOAD_URL = "https://www.dropbox.com/request/pl6labude2rxsoafh5e0"
+def inject_css():
+    st.markdown(
+        '''
+        <style>
+        @import url('https://fonts.googleapis.com/css2?family=GFS+Neohellenic:ital,wght@0,400;0,700;1,400&family=Noto+Sans:wght@400;500;600&display=swap');
 
+        :root{
+            --paper:#f7f1e8;
+            --paper2:#fcfaf6;
+            --ink:#26211d;
+            --muted:#8b7768;
+            --line:rgba(38,33,29,.16);
+        }
 
-st.markdown(
-    """
-<style>
-@import url('https://fonts.googleapis.com/css2?family=GFS+Neohellenic:ital,wght@0,400;0,700;1,400&family=Noto+Sans:wght@400;500;600&display=swap');
+        html, body, [class*="css"]{
+            font-family:"Noto Sans", Arial, sans-serif;
+        }
 
-:root {
-    --paper: #f7f1e8;
-    --paper2: #fcfaf6;
-    --ink: #26211d;
-    --muted: #8b7768;
-    --line: rgba(38,33,29,.16);
-}
+        .stApp{
+            background:
+              radial-gradient(circle at 15% 10%, rgba(255,255,255,.95), transparent 30rem),
+              radial-gradient(circle at 85% 90%, rgba(220,205,185,.28), transparent 28rem),
+              linear-gradient(180deg,var(--paper2),var(--paper));
+            color:var(--ink);
+        }
 
-.stApp {
-    background:
-        radial-gradient(circle at 15% 10%,
-        rgba(255,255,255,.95), transparent 30rem),
-        radial-gradient(circle at 85% 90%,
-        rgba(220,205,185,.28), transparent 28rem),
-        linear-gradient(180deg, var(--paper2), var(--paper));
+        header[data-testid="stHeader"]{background:transparent;}
+        #MainMenu, footer{visibility:hidden;}
 
-    color: var(--ink);
-}
+        .block-container{
+            max-width:780px;
+            padding-top:1.6rem;
+            padding-bottom:4rem;
+        }
 
-header[data-testid="stHeader"] {
-    background: transparent;
-}
+        .ma-hero{
+            text-align:center;
+            padding:1.2rem .8rem .6rem;
+        }
 
-#MainMenu, footer {
-    visibility: hidden;
-}
+        .ma-eyebrow{
+            font-family:"Noto Sans",Arial,sans-serif !important;
+            font-size:.67rem !important;
+            font-weight:400 !important;
+            letter-spacing:.38em !important;
+            text-transform:uppercase;
+            color:var(--muted);
+            margin-bottom:1.7rem;
+        }
 
-.block-container {
-    max-width: 780px;
-    padding-top: 2rem;
-    padding-bottom: 4rem;
-}
+        .ma-names{
+            font-family:"GFS Neohellenic","Trebuchet MS",sans-serif !important;
+            font-size:clamp(2.35rem,6vw,3.65rem) !important;
+            line-height:1.02 !important;
+            font-weight:500 !important;
+            letter-spacing:-.025em !important;
+            text-align:center !important;
+            color:var(--ink) !important;
+            margin:0 auto !important;
+            white-space:nowrap;
+        }
 
-html, body, [class*="css"] {
-    font-family: "Noto Sans", Arial, sans-serif;
-}
+        .ma-amp{
+            display:inline-block;
+            font-family:"GFS Neohellenic","Trebuchet MS",sans-serif !important;
+            font-style:normal !important;
+            font-weight:400 !important;
+            font-size:.68em !important;
+            padding:0 .14em;
+            transform:translateY(-.03em);
+        }
 
+        .ma-subtitle{
+            font-family:"GFS Neohellenic","Trebuchet MS",sans-serif !important;
+            font-size:clamp(1.05rem,2.7vw,1.35rem) !important;
+            line-height:1.1 !important;
+            font-style:italic !important;
+            font-weight:400 !important;
+            color:var(--muted) !important;
+            margin-top:.9rem !important;
+        }
 
-/* MARKDOWN TEXT */
+        .ma-rule{
+            width:76%;
+            height:1px;
+            background:var(--line);
+            margin:1.6rem auto 2rem;
+        }
 
-.ma-eyebrow {
-    text-align: center;
-    font-size: .67rem;
-    letter-spacing: .38em;
-    color: var(--muted);
-    margin-bottom: 1.4rem;
-}
+        .ma-copy{
+            text-align:center;
+            color:var(--muted);
+            font-size:.94rem;
+            line-height:1.65;
+            margin-bottom:1.15rem;
+        }
 
-.ma-names {
-    text-align: center;
-    font-family: "GFS Neohellenic", sans-serif;
-    font-size: clamp(2.35rem, 6vw, 3.65rem);
-    font-weight: 500;
-    line-height: 1.05;
-    letter-spacing: -.025em;
-    color: var(--ink);
-    white-space: nowrap;
-}
+        [data-testid="stFileUploader"]{
+            background:rgba(255,255,255,.46);
+            border:1px solid var(--line);
+            border-radius:24px;
+            padding:.4rem;
+        }
 
-.ma-amp {
-    font-size: .68em;
-    font-weight: 400;
-    padding: 0 .12em;
-}
+        [data-testid="stFileUploaderDropzone"]{
+            background:rgba(255,255,255,.26);
+            border:1px dashed rgba(38,33,29,.22);
+            border-radius:20px;
+            min-height:145px;
+        }
 
-.ma-subtitle {
-    text-align: center;
-    font-family: "GFS Neohellenic", sans-serif;
-    font-size: 1.15rem;
-    font-style: italic;
-    color: var(--muted);
-    margin-top: .7rem;
-}
+        div.stButton > button{
+            width:100%;
+            min-height:3.55rem;
+            border-radius:999px;
+            border:1px solid var(--ink);
+            background:var(--ink);
+            color:#fff;
+            font-family:"Noto Sans",Arial,sans-serif;
+            font-size:.82rem;
+            font-weight:600;
+            letter-spacing:.12em;
+            text-transform:uppercase;
+        }
 
-.ma-rule {
-    width: 76%;
-    height: 1px;
-    background: var(--line);
-    margin: 1.8rem auto 2rem;
-}
+        div.stButton > button:hover{
+            background:transparent;
+            color:var(--ink);
+            border-color:var(--ink);
+        }
 
-.ma-copy {
-    text-align: center;
-    color: var(--muted);
-    font-size: .94rem;
-    line-height: 1.6;
-    margin-bottom: 1.2rem;
-}
+        div[data-testid="stLinkButton"] > a {
+            width:100%;
+            min-height:3.35rem;
+            border-radius:999px !important;
+            border:1px solid var(--ink) !important;
+            background:transparent !important;
+            color:var(--ink) !important;
+            font-family:"Noto Sans",Arial,sans-serif !important;
+            font-size:.78rem !important;
+            font-weight:600 !important;
+            letter-spacing:.1em !important;
+            text-transform:uppercase !important;
+            display:flex !important;
+            align-items:center !important;
+            justify-content:center !important;
+            text-decoration:none !important;
+        }
 
-.ma-note {
-    text-align: center;
-    color: var(--muted);
-    font-size: .76rem;
-    margin-top: .8rem;
-}
+        div[data-testid="stLinkButton"] > a:hover {
+            background:var(--ink) !important;
+            color:#fff !important;
+        }
 
-.ma-large-title {
-    text-align: center;
-    font-family: "GFS Neohellenic", sans-serif;
-    font-size: 1.5rem;
-    font-style: italic;
-    color: var(--ink);
-    margin-top: 2.8rem;
-}
+        .ma-large-title{
+            text-align:center;
+            font-family:"GFS Neohellenic","Trebuchet MS",sans-serif !important;
+            font-size:1.5rem !important;
+            font-style:italic;
+            color:var(--ink);
+            margin-top:1.65rem;
+            margin-bottom:.2rem;
+        }
 
-.ma-large-copy {
-    text-align: center;
-    color: var(--muted);
-    font-size: .8rem;
-    margin-top: .25rem;
-    margin-bottom: .8rem;
-}
+        .ma-large-copy{
+            text-align:center;
+            color:var(--muted);
+            font-size:.8rem;
+            line-height:1.55;
+            margin-bottom:.7rem;
+        }
 
-.ma-footer {
-    text-align: center;
-    color: var(--muted);
-    font-size: .76rem;
-    margin-top: 2.8rem;
-}
+        .ma-summary{
+            background:rgba(255,255,255,.42);
+            border:1px solid var(--line);
+            border-radius:18px;
+            padding:.9rem 1rem;
+            margin:.8rem 0 1rem;
+        }
 
+        .ma-thanks{
+            text-align:center;
+            padding:2rem 1.3rem;
+            border:1px solid var(--line);
+            border-radius:24px;
+            background:rgba(255,255,255,.48);
+            margin-top:1rem;
+        }
 
-/* NATIVE STREAMLIT LINK BUTTONS */
+        .ma-thanks-title{
+            font-family:"GFS Neohellenic","Trebuchet MS",sans-serif !important;
+            font-size:2.4rem !important;
+            font-weight:500 !important;
+            margin-bottom:.25rem;
+        }
 
-div[data-testid="stLinkButton"] > a {
-    width: 100%;
-    min-height: 3.55rem;
+        .ma-privacy{
+            text-align:center;
+            font-size:.76rem;
+            color:var(--muted);
+            line-height:1.55;
+            margin-top:1.2rem;
+        }
 
-    border-radius: 999px !important;
-    border: 1px solid var(--ink) !important;
+        @media(max-width:640px){
+            .block-container{padding:1rem .9rem 3rem;}
+            .ma-names{
+                font-size:clamp(1.95rem,9.2vw,2.65rem) !important;
+                line-height:1.05 !important;
+                white-space:nowrap;
+            }
+            .ma-amp{
+                display:inline-block;
+                padding:0 .10em;
+                margin:0;
+                font-size:.68em !important;
+            }
+            .ma-subtitle{
+                font-size:1.02rem !important;
+                line-height:1.25 !important;
+                margin-top:.8rem !important;
+                padding:0 .8rem;
+            }
+        }
+        </style>
+        ''',
+        unsafe_allow_html=True,
+    )
 
-    background: var(--ink) !important;
-    color: white !important;
+def get_dropbox_client():
+    if all(k in st.secrets for k in ("DROPBOX_APP_KEY", "DROPBOX_APP_SECRET", "DROPBOX_REFRESH_TOKEN")):
+        return dropbox.Dropbox(
+            app_key=st.secrets["DROPBOX_APP_KEY"],
+            app_secret=st.secrets["DROPBOX_APP_SECRET"],
+            oauth2_refresh_token=st.secrets["DROPBOX_REFRESH_TOKEN"],
+            timeout=900,
+        )
 
-    font-family: "Noto Sans", Arial, sans-serif !important;
-    font-size: .78rem !important;
-    font-weight: 600 !important;
+    if "DROPBOX_ACCESS_TOKEN" in st.secrets:
+        return dropbox.Dropbox(
+            oauth2_access_token=st.secrets["DROPBOX_ACCESS_TOKEN"],
+            timeout=900,
+        )
 
-    letter-spacing: .10em !important;
-    text-transform: uppercase !important;
+    raise RuntimeError("Dropbox credentials are missing.")
 
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
+def safe_filename(name):
+    name = PurePosixPath(name).name
+    name = re.sub(r"[\x00-\x1f\x7f]+", "", name)
+    name = re.sub(r'[<>:"/\\|?*]+', "_", name)
+    return name.strip(" .") or "upload"
 
-    text-decoration: none !important;
-}
+def destination_path(original_name):
+    stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d_%H-%M-%S")
+    short_id = uuid.uuid4().hex[:6]
+    return f"{DROPBOX_FOLDER.rstrip('/')}/{stamp}_{short_id}_{safe_filename(original_name)}"
 
-div[data-testid="stLinkButton"] > a:hover {
-    background: transparent !important;
-    color: var(--ink) !important;
-}
+def upload_to_dropbox(dbx, uploaded_file, path):
+    uploaded_file.seek(0, 2)
+    size = uploaded_file.tell()
+    uploaded_file.seek(0)
 
+    if size <= SIMPLE_UPLOAD_LIMIT:
+        dbx.files_upload(
+            uploaded_file.read(),
+            path,
+            mode=WriteMode.add,
+            autorename=True,
+            mute=True,
+        )
+        return
 
-/* MOBILE */
+    first_chunk = uploaded_file.read(CHUNK_SIZE)
+    start_result = dbx.files_upload_session_start(first_chunk)
 
-@media(max-width: 640px) {
+    cursor = UploadSessionCursor(
+        session_id=start_result.session_id,
+        offset=len(first_chunk),
+    )
 
-    .block-container {
-        padding: 1.2rem .9rem 3rem;
-    }
+    commit = CommitInfo(
+        path=path,
+        mode=WriteMode.add,
+        autorename=True,
+        mute=True,
+    )
 
-    .ma-names {
-        font-size: clamp(1.95rem, 9vw, 2.65rem);
-        white-space: nowrap;
-    }
+    while cursor.offset < size:
+        remaining = size - cursor.offset
+        chunk = uploaded_file.read(min(CHUNK_SIZE, remaining))
 
-    .ma-subtitle {
-        font-size: 1.02rem;
-        padding: 0 .6rem;
-    }
-}
+        if not chunk:
+            raise IOError("Upload ended unexpectedly before Dropbox received the full file.")
 
-</style>
-""",
-    unsafe_allow_html=True,
-)
+        next_offset = cursor.offset + len(chunk)
+        is_last_chunk = next_offset == size
 
+        if is_last_chunk:
+            dbx.files_upload_session_finish(
+                chunk,
+                cursor,
+                commit,
+            )
+            cursor.offset = next_offset
+        else:
+            dbx.files_upload_session_append_v2(
+                chunk,
+                cursor,
+            )
+            cursor.offset = next_offset
 
-# ---------- HEADER ----------
+def main():
+    inject_css()
 
-st.markdown(
-    '<p class="ma-eyebrow">M &amp; A · WEDDING</p>',
-    unsafe_allow_html=True,
-)
+    st.markdown(
+        '''
+        <div class="ma-hero">
+            <div class="ma-eyebrow">M &amp; A · WEDDING</div>
+            <div class="ma-names">Μάριος <span class="ma-amp">&amp;</span> Αγγελική</div>
+            <div class="ma-subtitle">Οι πιο όμορφες στιγμές, μέσα από τα μάτια σας</div>
+        </div>
+        <div class="ma-rule"></div>
+        <div class="ma-copy">
+            Ανέβασε τις φωτογραφίες και τα βίντεο που τράβηξες σήμερα.
+        </div>
+        ''',
+        unsafe_allow_html=True,
+    )
+    st.link_button(
+        "ΜΟΙΡΑΣΟΥ ΤΙΣ ΣΤΙΓΜΕΣ",
+        LARGE_VIDEO_URL,
+        use_container_width=True,
+    )
 
-st.markdown(
-    '<p class="ma-names">Μάριος <span class="ma-amp">&amp;</span> Αγγελική</p>',
-    unsafe_allow_html=True,
-)
+    st.markdown(
+        '''
+        <div class="ma-large-title">Έχεις πολύ μεγάλο βίντεο;</div>
+        <div class="ma-large-copy">
+            Για βίντεο πάνω από 1 GB, χρησιμοποίησε την επιλογή παρακάτω.
+        </div>
+        ''',
+        unsafe_allow_html=True,
+    )
 
-st.markdown(
-    '<p class="ma-subtitle">Οι πιο όμορφες στιγμές, μέσα από τα μάτια σας</p>',
-    unsafe_allow_html=True,
-)
+    st.link_button(
+        "ΑΝΕΒΑΣΕ ΤΟ ΒΙΝΤΕΟ",
+        LARGE_VIDEO_URL,
+        use_container_width=True,
+    )
 
-st.markdown(
-    '<div class="ma-rule"></div>',
-    unsafe_allow_html=True,
-)
+    st.markdown(
+        '''
+        <div class="ma-privacy">
+            Οι αναμνήσεις σας, το καλύτερο δώρο μας. ♡
+        </div>
+        ''',
+        unsafe_allow_html=True,
+    )
 
-
-# ---------- MAIN UPLOAD ----------
-
-st.markdown(
-    '<p class="ma-copy">Ανέβασε τις φωτογραφίες και τα βίντεο που τράβηξες σήμερα.</p>',
-    unsafe_allow_html=True,
-)
-
-st.link_button(
-    "ΑΝΕΒΑΣΕ ΦΩΤΟΓΡΑΦΙΕΣ & ΒΙΝΤΕΟ",
-    UPLOAD_URL,
-    use_container_width=True,
-)
-
-st.markdown(
-    '<p class="ma-note">Μπορείς να επιλέξεις πολλές φωτογραφίες και βίντεο μαζί.</p>',
-    unsafe_allow_html=True,
-)
-
-
-# ---------- LARGE VIDEO ----------
-
-st.markdown(
-    '<p class="ma-large-title">Έχεις πολύ μεγάλο βίντεο;</p>',
-    unsafe_allow_html=True,
-)
-
-st.markdown(
-    '<p class="ma-large-copy">Ανέβασέ το απευθείας στο Dropbox.</p>',
-    unsafe_allow_html=True,
-)
-
-st.link_button(
-    "ΑΝΕΒΑΣΕ ΤΟ ΒΙΝΤΕΟ",
-    UPLOAD_URL,
-    use_container_width=True,
-)
-
-
-# ---------- FOOTER ----------
-
-st.markdown(
-    '<p class="ma-footer">Οι αναμνήσεις σας, το καλύτερο δώρο μας. ♡</p>',
-    unsafe_allow_html=True,
-)
+if __name__ == "__main__":
+    main()
