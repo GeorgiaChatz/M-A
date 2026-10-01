@@ -153,7 +153,7 @@ def inject_css():
         }
 
         div[data-testid="stLinkButton"] > a {
-            width:100%;
+            width:72%;
             min-height:3.35rem;
             border-radius:999px !important;
             border:1px solid var(--ink) !important;
